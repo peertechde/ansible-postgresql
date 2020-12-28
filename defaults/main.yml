@@ -1,0 +1,80 @@
+postgresql_dependecies:
+- "locales"
+- "python3-psycopg2"
+
+postgresql_version: "12"
+postgresql_encoding: "UTF-8"
+postgresql_locale: "en_US.UTF-8"
+postgresql_ctype: "en_US.UTF-8"
+
+postgresql_admin_user: "postgres"
+
+postgresql_service_user: "postgres"
+postgresql_service_group: "postgres"
+
+postgresql_cluster: "main"
+postgresql_cluster_reset: "false"
+
+postgresql_users: []
+postgresql_databases: []
+
+postgresql_auth_method: "trust"
+postgresql_hba_default:
+- { type: local, database: all, user: "{{ postgresql_admin_user }}", address: "", method: "{{ postgresql_auth_method }}", comment: "" }
+- { type: local, database: all, user: all, address: "",             method: "{{ postgresql_auth_method }}", comment: "local is for Unix domain socket connections only" }
+- { type: host,  database: all, user: all, address: "127.0.0.1/32", method: "{{ postgresql_auth_method }}", comment: "IPv4 local connections:" }
+- { type: host,  database: all, user: all, address: "::1/128",      method: "{{ postgresql_auth_method }}", comment: "IPv6 local connections:" }
+
+# postgresql.conf specific variables
+postgresql_conf_path: "/etc/postgresql/{{ postgresql_version }}/{{ postgresql_cluster }}"
+postgresql_varlib_name: "postgresql"
+postgresql_data_path: "/var/lib/{{ postgresql_varlib_name }}/{{ postgresql_version }}/{{ postgresql_cluster }}"
+postgresql_hba_file_path: "{{ postgresql_conf_path }}/pg_hba.conf"
+postgresql_ident_file_path: "{{ postgresql_conf_path }}/pg_ident.conf"
+postgresql_pid_path: "/var/run/postgresql"
+postgresql_external_pid_file_path: "{{ postgresql_pid_path }}/{{ postgresql_version }}-{{ postgresql_cluster }}.pid"
+
+# connections and security
+postgresql_listen_address:
+  - "localhost"
+
+postgresql_listen_port: "5432"
+postgresql_max_connections: "100"
+
+postgresql_unix_socket_directories: "/var/run/postgresql"
+postgresql_unix_socket_group: ""
+postgresql_unix_socket_permissions: 0777
+
+postgresql_ssl: "on"
+postgresql_ssl_ca_file: ""
+postgresql_ssl_cert_file: "/etc/ssl/certs/ssl-cert-snakeoil.pem"
+postgresql_ssl_crl_file: ""
+postgresql_ssl_key_file: "/etc/ssl/private/ssl-cert-snakeoil.key"
+postgresql_ssl_ciphers: "HIGH:MEDIUM:+3DES:!aNULL"
+postgresql_ssl_prefer_server_ciphers: on
+postgresql_ssl_ecdh_curve: "prime256v1"
+postgresql_ssl_min_protocol_version: "TLSv1"
+postgresql_ssl_max_protocol_version: ""
+
+# resource usage
+postgresql_shared_buffers: "128MB"
+postgresql_huge_pages: "try"
+postgresql_temp_buffers: "8MB"
+postgresql_work_men: "4MB"
+postgresql_maintenance_work_mem: "64MB"
+postgresql_autovacuum_work_mem: "-1"
+postgresql_max_stack_depth: "2MB"
+postgresql_shared_memory_type: "mmap"
+postgresql_dynamic_shared_memory_type: "posix"
+postgresql_max_files_per_process: "1000"
+
+# query tuning
+postgresql_effective_cache_size: "512MB"
+postgresql_default_statistics_target: 10000
+
+# reporting
+postgresql_log_destination: "stderr"
+postgresql_logging_collector: "off"
+postgresql_log_directory: "log"
+postgresql_log_filename: "postgresql-%Y-%m-%d_%H%M%S.log"
+postgresql_log_file_mode: 0600

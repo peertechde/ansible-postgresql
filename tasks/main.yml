@@ -1,0 +1,61 @@
+- name: ensure postgresql apt key is present
+  apt_key: url="https://www.postgresql.org/media/keys/ACCC4CF8.asc" state=present
+
+- name: ensure apt repository list exists
+  apt_repository: repo="deb http://apt.postgresql.org/pub/repos/apt/ focal-pgdg main" state=present
+
+- name: ensure dependencies are installed
+  apt: name="{{ item }}" state=present update_cache=yes
+  with_items: "{{ postgresql_dependecies }}"
+
+- name: ensure postgresql is present
+  apt: name="postgresql-{{ postgresql_version }}" state=present
+
+- name: ensure the postgres data directory exists
+  file: path="{{ postgresql_data_path }}" owner="{{ postgresql_service_user }}" group="{{ postgresql_service_group }}" state=directory
+  notify: restart postgresql
+
+- name: ensure postgresql database is initialized in the data directory
+  shell: "/usr/lib/postgresql/{{ postgresql_version }}/bin/initdb -D {{ postgresql_data_path }}"
+  args:
+    creates: "{{ postgresql_data_path }}/base"
+  become: yes
+  become_user: "{{ postgresql_admin_user }}"
+  notify: restart postgresql
+
+- name: ensure locals are generated
+  locale_gen: name="{{ item }}" state=present
+  with_items: [ "{{ postgresql_locale }}", "{{ postgresql_ctype }}" ]
+
+- name: ensure postgresql configuration directory exists
+  file: path="{{ postgresql_conf_path }}" owner="{{ postgresql_service_user }}" group="{{ postgresql_service_group }}" state=directory
+
+- name: ensure pg_hba.conf exists
+  template: src=pg_hba.conf.j2 dest="{{ postgresql_conf_path }}/pg_hba.conf"
+            owner="{{ postgresql_service_user }}" group="{{ postgresql_service_group }}"
+  notify: restart postgresql
+
+- name: ensure postresql.conf exists
+  template: src="postgresql.conf-{{ postgresql_version }}.j2" dest="{{ postgresql_conf_path }}/postgresql.conf"
+            owner="{{ postgresql_service_user }}" group="{{ postgresql_service_group }}"
+  notify: restart postgresql
+
+- name: ensure postgresql pid directory exists
+  file: name="{{ postgresql_pid_path }}" owner="{{ postgresql_service_user }}" group="{{ postgresql_service_group }}" state=directory
+
+- name: ensure postgresql users exists
+  postgresql_user: name="{{ item.name }}" password="{{ item.password | default(omit) }}" 
+                   encrypted="{{ item.encrypted | default(omit) }}" priv="{{ item.priv | default(omit) }}" state=present
+  become: yes
+  become_user: "{{ postgresql_admin_user }}"
+  with_items: "{{ postgresql_users }}"
+  when: postgresql_users | length > 0
+
+- name: ensure postgresql databases exists
+  postgresql_db: name="{{ item.name }}" owner="{{ item.owner }}" encoding="{{ item.encoding | default(postgresql_encoding) }}"
+                 lc_collate="{{ item.lc_collate | default(postgresql_locale) }}" lc_ctype="{{ item.lc_ctype | default(postgresql_ctype) }}"
+                 template="template0" state=present
+  become: yes
+  become_user: "{{ postgresql_admin_user }}"
+  with_items: "{{ postgresql_databases }}"
+  when: postgresql_databases | length > 0

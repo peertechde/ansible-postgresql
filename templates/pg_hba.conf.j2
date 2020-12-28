@@ -1,0 +1,7 @@
+# Connection configuration
+{% for conn in postgresql_hba_default %}
+{% if conn.comment is defined %}
+# {{conn.comment}}
+{% endif %}
+{{conn.type}}  {{conn.database}}  {{conn.user}}  {{conn.address}}  {{conn.method}}
+{% endfor %}
